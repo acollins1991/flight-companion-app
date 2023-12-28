@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
 // import 'package:file_picker/file_picker.dart';
+import 'package:flight_companion_app/utils/ai.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
@@ -13,6 +16,12 @@ import 'package:mime/mime.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
+//
+
+class HandleAiMessage {
+  String message;
+  HandleAiMessage(this.message);
+}
 
 class ChatPage extends StatefulWidget {
   const ChatPage({super.key});
@@ -84,17 +93,56 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
-  void _handlePreviewDataFetched(
-    types.TextMessage message,
-    types.PreviewData previewData,
-  ) {
-    final index = _messages.indexWhere((element) => element.id == message.id);
-    final updatedMessage = (_messages[index] as types.TextMessage).copyWith(
-      previewData: previewData,
-    );
+  void _handleAi(String prompt) async {
+    // start talking to ai
+    var aiResponse = talkToAi(prompt);
 
+    // set initial 'thinking' message
+    final textMessage = types.TextMessage(
+      author: const types.User(
+        id: 'ai',
+      ),
+      createdAt: DateTime.now().millisecondsSinceEpoch,
+      id: const Uuid().v4(),
+      text: '...',
+    );
     setState(() {
-      _messages[index] = updatedMessage;
+      _messages.insert(0, textMessage);
+    });
+
+// every second replace last message with updated dot indicator
+    String dots = "";
+    Timer thinkingTimer = Timer(
+        const Duration(seconds: 1),
+        () => {
+              if (dots.split('.').length == 3) {dots = ""},
+              dots = "${dots}.",
+              _messages.insert(
+                  0,
+                  types.TextMessage(
+                    author: const types.User(
+                      id: 'ai',
+                    ),
+                    createdAt: textMessage.createdAt,
+                    id: const Uuid().v4(),
+                    text: dots,
+                  ))
+            });
+
+    // wait for response to be ready and update message
+    String aiResponseText = await aiResponse;
+    setState(() {
+      thinkingTimer.cancel();
+      _messages.removeLast();
+      final aiResponseMessage = types.TextMessage(
+          author: const types.User(
+            id: 'ai',
+          ),
+          createdAt: DateTime.now().millisecondsSinceEpoch,
+          id: const Uuid().v4(),
+          // text: extractAiPromptResponse(aiResponseText),
+          text: aiResponseText);
+      _messages.insert(0, aiResponseMessage);
     });
   }
 
@@ -107,6 +155,8 @@ class _ChatPageState extends State<ChatPage> {
     );
 
     _addMessage(textMessage);
+
+    _handleAi(message.text);
   }
 
   void _loadMessages() async {
@@ -128,7 +178,6 @@ class _ChatPageState extends State<ChatPage> {
           child: Chat(
             messages: _messages,
             onMessageTap: _handleMessageTap,
-            onPreviewDataFetched: _handlePreviewDataFetched,
             onSendPressed: _handleSendPressed,
             showUserAvatars: true,
             showUserNames: true,
