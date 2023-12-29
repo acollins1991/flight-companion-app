@@ -41,3 +41,7 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# CUSTOM
+## ignore message.json file
+messages.json

@@ -2,21 +2,20 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-// import 'package:file_picker/file_picker.dart';
 import 'package:flight_companion_app/utils/ai.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import 'package:http/http.dart' as http;
-// import 'package:image_picker/image_picker.dart';
-import 'package:intl/date_symbol_data_local.dart';
-import 'package:mime/mime.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
-//
+
+File messageJsonFile = File('messages.json');
+
+void updateMessagesJson(messages) async {
+  messageJsonFile.writeAsString(jsonEncode(messages));
+}
 
 class HandleAiMessage {
   String message;
@@ -45,6 +44,7 @@ class _ChatPageState extends State<ChatPage> {
   void _addMessage(types.Message message) {
     setState(() {
       _messages.insert(0, message);
+      updateMessagesJson(_messages);
     });
   }
 
@@ -108,6 +108,7 @@ class _ChatPageState extends State<ChatPage> {
     );
     setState(() {
       _messages.insert(0, textMessage);
+      updateMessagesJson(_messages);
     });
 
 // every second replace last message with updated dot indicator
@@ -143,6 +144,7 @@ class _ChatPageState extends State<ChatPage> {
           // text: extractAiPromptResponse(aiResponseText),
           text: aiResponseText);
       _messages.insert(0, aiResponseMessage);
+      updateMessagesJson(_messages);
     });
   }
 
@@ -160,8 +162,13 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   void _loadMessages() async {
-    final response = await rootBundle.loadString('assets/messages.json');
-    final messages = (jsonDecode(response) as List)
+// create the messageJsonFile if it does not exist with empty array
+    if (!messageJsonFile.existsSync()) {
+      messageJsonFile.create(recursive: true);
+      messageJsonFile.writeAsStringSync('[]');
+    }
+
+    final messages = (jsonDecode(messageJsonFile.readAsStringSync()) as List)
         .map((e) => types.Message.fromJson(e as Map<String, dynamic>))
         .toList();
 
