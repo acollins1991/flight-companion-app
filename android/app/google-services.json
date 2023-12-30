@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1037480035478",
+    "project_id": "flight-companion-9e174",
+    "storage_bucket": "flight-companion-9e174.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1037480035478:android:7c8c5ca6b5287f4304aeb7",
+        "android_client_info": {
+          "package_name": "com.example.flight_companion_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBifOZtfkYiXU6bECVdpe5N16ur1z6gSc4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
